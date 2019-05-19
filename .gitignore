@@ -1,0 +1,7 @@
+tags
+CMakeCache.txt
+CMakeFiles/
+Makefile
+aether
+cmake_install.cmake
+
