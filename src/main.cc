@@ -2,13 +2,9 @@
 #include <SDL.h>
 
 #include "sdl_utils.h"
-#include "screen.h"
-//#include "intensity_map.h"
-#include "hex_intensity_map_view.h"
-//#include "intensity_map_perlin.h"
-//#include "intensity_map_noise.h"
-//#include "intensity_map_blur.h"
-//#include "xtensor/xarray.hpp"
+#include "graphics/screen.h"
+#include "graphics/hex_intensity_map_view.h"
+#include "game_loop.h"
 
 void init_sdl() {
 	auto r = SDL_Init(SDL_INIT_VIDEO);
@@ -19,30 +15,21 @@ int main(int argc, char* argv[]) {
 
 	init_sdl();
 
-	//auto screen = new Screen();
-	Screen screen;
-
 	// Generate intensity map
-
-	//auto im = generate_subdivision({1025, 1025});
-	//auto imv = IntensityMapView(im, screen);
-	auto imv = HexIntensityMapView(screen, {1000, 1000});
-
+	//auto imv = HexIntensityMapView(screen, {1000, 1000});
 	SDL_Delay(100);
 
-	screen.render_start();
-	//imv.update();
+	//screen.render_start();
+	//imv.render();
+	//screen.render_end();
 
-	imv.render();
-
-	screen.render_end();
-
-	
-	SDL_Delay(5000);
-	
-	//screen.update();
 	//SDL_Delay(5000);
+	
 
+	UserInterface ui;
+
+	GameLoop(ui).run();
+	
 	return 0;
 }
 
