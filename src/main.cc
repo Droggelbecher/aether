@@ -1,35 +1,43 @@
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include "sdl_utils.h"
 #include "graphics/screen.h"
-#include "graphics/hex_intensity_map_view.h"
 #include "game_loop.h"
+#include "entities/entity_storage.h"
+
+#include "graphics/map_view.h"
 
 void init_sdl() {
 	auto r = SDL_Init(SDL_INIT_VIDEO);
 	check_sdl(r != -1, "initialize");
 } // init_sdl()
 
-int main(int argc, char* argv[]) {
+
+void run_game() {
 
 	init_sdl();
-
-	// Generate intensity map
-	//auto imv = HexIntensityMapView(screen, {1000, 1000});
-	SDL_Delay(100);
-
-	//screen.render_start();
-	//imv.render();
-	//screen.render_end();
-
-	//SDL_Delay(5000);
 	
+	EntityStorage storage;
+	Screen screen;
 
-	UserInterface ui;
+	MapView map_view { screen.sdl_renderer(), { 600, 400 }, storage };
+	UserInterface ui { &map_view };
+	GameLoop loop { screen, ui };
 
-	GameLoop(ui).run();
-	
+	auto asteroid = storage.make_entity();
+	asteroid.graphics().texture() = { screen.sdl_renderer(), "resources/asteroid.png" };
+	asteroid.graphics().texture().set_scale(0.2);
+	asteroid.physics().set_position({ 0, 0, 1.0 });
+
+	loop.run();
+}
+
+
+int main(int argc, char* argv[]) {
+
+	run_game();
+
 	return 0;
 }
 

@@ -2,7 +2,11 @@
 #ifndef _SCREEN_H_
 #define _SCREEN_H_
 
-#include <SDL.h>
+#include <fmt/printf.h>
+#include <SDL2/SDL.h>
+
+#include "../sdl_utils.h"
+#include "../utils.h"
 
 class Screen {
 
@@ -18,27 +22,21 @@ class Screen {
 				SDL_WINDOW_SHOWN
 			);
 			check_sdl(_window != nullptr, "window creation");
-			//SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "bilinear");
 
 			_renderer = SDL_CreateRenderer(_window, -1, 0);
-			//_texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, w, h);
 		}
 
-		void render_start() {
+		ScopeGuard begin_render_onto() {
 			SDL_SetRenderTarget(_renderer, nullptr);
 			SDL_SetRenderDrawBlendMode(_renderer, SDL_BLENDMODE_NONE);
-			SDL_SetRenderDrawColor(_renderer, 255, 0, 0, 255);
+			SDL_SetRenderDrawColor(_renderer, 10, 10, 10, 255);
 			SDL_RenderClear(_renderer);
-		}
 
-		void render_end() {
-			// copy _surface (cpu) to _texture (gpu)
-			//SDL_UpdateTexture(_texture, nullptr, _surface->pixels, _surface->pitch);
-			//SDL_UpdateTexture(_texture, nullptr, _surface->pixels, _surface->pitch);
-			
-			//SDL_RenderCopy(_renderer, _texture, nullptr, nullptr); // render the texture
-			SDL_SetRenderTarget(_renderer, nullptr);
-			SDL_RenderPresent(_renderer); // actually display on the screen
+			return {[=]{
+				SDL_SetRenderTarget(_renderer, nullptr);
+				SDL_RenderPresent(_renderer); // actually display on the screen
+			}};
 		}
 
 		void render(SDL_Texture* texture) {
@@ -52,9 +50,6 @@ class Screen {
 	private:
 		SDL_Window *_window;
 		SDL_Renderer *_renderer;
-		//SDL_Texture *_texture;
-
-		//SDL_Surface *_surface;
 };
 
 #endif // _SCREEN_H_

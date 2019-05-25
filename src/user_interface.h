@@ -2,39 +2,37 @@
 #ifndef _USER_INTERFACE_H_
 #define _USER_INTERFACE_H_
 
-#include "graphics/image.h"
-#include "graphics/hex_intensity_map_view.h"
+#include <variant>
+
+#include "commands.h"
+#include "ui_element.h"
 
 class UserInterface {
 
 public:
 
-	UserInterface()
-		: _himv{ _screen, {1000, 1000} },
-		  _backdrop{ _screen, "resources/backdrop.jpg" }
+	UserInterface(std::initializer_list<UIElement*> ui_elements)
+		: _elements { ui_elements }
 	{
 	}
 
 	bool process_command(const Command& command) {
-		if(command.type == Command::DRAG) {
-			_himv.move(command.drag.xrel, command.drag.yrel);
-			return true;
+		for(auto& e: _elements) {
+			if(e->process_command(command)) {
+				return true;
+			}
 		}
-
 		return false;
 	}
 
-	void render() {
-		_screen.render_start();
-		_backdrop.render_to_screen(); // TODO: more consistent method naming
-		_himv.render();
-		_screen.render_end();
+	void render(SDL_Renderer *r) {
+		for(auto& e: _elements) {
+			e->render(r);
+		}
 	}
 
 private:
-	Screen _screen;
-	HexIntensityMapView _himv;
-	Image _backdrop;
+	std::vector<UIElement*> _elements;
 };
 
 #endif // _USER_INTERFACE_H_

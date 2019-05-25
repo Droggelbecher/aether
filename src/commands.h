@@ -2,24 +2,29 @@
 #ifndef _COMMANDS_H_
 #define _COMMANDS_H_
 
-struct Command {
-	//virtual void operator()() = 0;
-	
-	enum Type { DRAG };
+#include <variant>
 
-	Type type;
-	
-	union {
-		struct {
-			double xrel, yrel;
-		} drag;
-	};
+/**
+ * Some abstract commands for controlling user interface, units, etc...
+ */
+
+struct BaseCommand {
 };
 
-Command drag(double xrel, double yrel) {
-	Command r { Command::DRAG };
-	r.drag = { xrel, yrel };
-	return r;
-}
+struct DragCommand: BaseCommand {
+	DragCommand(int xrel, int yrel) : xrel(xrel), yrel(yrel) {}
+	int xrel;
+	int yrel;
+};
+
+struct ZoomCommand: BaseCommand {
+	ZoomCommand(int y): y(y) {}
+	int y;
+};
+
+using Command = std::variant<
+	DragCommand,
+	ZoomCommand
+>;
 
 #endif // _COMMANDS_H_

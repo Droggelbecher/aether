@@ -2,56 +2,136 @@
 #ifndef _TEXTURE_H_
 #define _TEXTURE_H_
 
+#include <optional>
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+
+#include "../coordinate.h"
+#include "../utils.h"
 #include "screen.h"
 
+/**
+ * An owning wrapper for SDL_Texture* with some convenience methods for construction and rendering.
+ */
 class Texture {
 public:
-	Texture(Screen& screen, Coordi size)
-		: _sdl_texture(
-				SDL_CreateTexture(
-					screen.sdl_renderer(),
-					SDL_PIXELFORMAT_RGBA8888,
-					SDL_TEXTUREACCESS_TARGET,
-					size.x, size.y
-				)
-		),
-		_screen(screen),
-		_size(size)
-	{
-		
+
+	enum Flags {
+		NONE,
+		CLEAR,
+		BLACK
+	};
+
+	Texture(): _sdl_texture(nullptr) {
+	}
+
+	Texture(SDL_Renderer *r, Coordi size) {
+		_sdl_texture = SDL_CreateTexture(
+			r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
+			size[0], size[1]
+		);
 		SDL_SetTextureBlendMode(_sdl_texture, SDL_BLENDMODE_BLEND);
 	}
 
+	Texture(SDL_Renderer *r, const char *filename) {
+		_sdl_texture = IMG_LoadTexture(r, filename);
+		if(!_sdl_texture) {
+			throw std::runtime_error(fmt::format("Error loading {}", filename));
+		}
+		SDL_SetTextureBlendMode(_sdl_texture, SDL_BLENDMODE_BLEND);
+	}
+
+	Texture(Texture&& other) noexcept {
+		this->_sdl_texture = other._sdl_texture;
+		other._sdl_texture = nullptr;
+	}
+	
+	Texture& operator=(Texture&& other) noexcept {
+		_free_texture();
+		this->_sdl_texture = other._sdl_texture;
+		other._sdl_texture = nullptr;
+		return *this;
+	}
+
 	virtual ~Texture() {
-		SDL_DestroyTexture(_sdl_texture); // TODO
-		_sdl_texture = nullptr;
+		_free_texture();
 	}
 
 	SDL_Texture* sdl_texture() {
 		return _sdl_texture;
 	}
 
-	void render_to_screen() {
-		auto r = _screen.sdl_renderer();
-		SDL_SetRenderTarget(r, nullptr); //_screen.window());
-		SDL_SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-		SDL_Rect target { 0, 0, _size.x, _size.y };
-		SDL_RenderCopy(r, _sdl_texture, nullptr, &target);
+	void set_scale(double scale) {
+		_scale = scale;
 	}
 
-	SDL_Renderer* render_start() { // TODO: make this return Resource<SDL_Renderer*>?
-		auto r = _screen.sdl_renderer();
+	Coordi size() const {
+		int w, h;
+		SDL_QueryTexture(_sdl_texture, nullptr, nullptr, &w, &h);
+		return { static_cast<int>(w * _scale), static_cast<int>(h * _scale) };
+	}
+
+	void render(SDL_Renderer* r, std::optional<SDL_Rect> target = std::nullopt) {
+		if(!_sdl_texture) {
+			return;
+		}
+
+		SDL_Rect tgt { 0, 0, 0, 0 };
+		if(target) {
+			tgt = target.value();
+		}
+		else {
+			SDL_QueryTexture(_sdl_texture, nullptr, nullptr, &tgt.w, &tgt.h);
+			tgt.w *= _scale;
+			tgt.h *= _scale;
+		}
+
+		SDL_SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
+		SDL_RenderCopy(r, _sdl_texture, nullptr, &tgt);
+	}
+
+	/**
+	 * Set the target of passed renderer to this texture and
+	 * prepare the texture for rendering.
+	 * When returned ScopeGuard is destructed, reset renderer to previous state.
+	 * 
+	 * Use like:
+	 * auto renderer = ...
+	 * {
+	 *   auto guard = texture.begin_render_onto(renderer);
+	 *   // render onto texture
+	 * }
+	 * // renderer is back to previous target here
+	 */
+	ScopeGuard begin_render_onto(SDL_Renderer* r, Flags flags = NONE) {
+		auto prev_target = SDL_GetRenderTarget(r);
+
 		SDL_SetRenderTarget(r, _sdl_texture);
 		SDL_SetRenderDrawBlendMode(r, SDL_BLENDMODE_NONE);
-		SDL_SetRenderDrawColor(r, 255, 0, 255, 0); // "invisible pink"
-		SDL_RenderFillRect(r, nullptr);
-		return r;
+		if(flags & BLACK) {
+			SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+			SDL_RenderFillRect(r, nullptr);
+		}
+		if(flags & CLEAR) {
+			SDL_SetRenderDrawColor(r, 0, 0, 0, 0); // "invisible pink"
+			SDL_RenderFillRect(r, nullptr);
+		}
+		
+		return {[=]{ SDL_SetRenderTarget(r, prev_target); }};
 	}
 
 private:
+
+	void _free_texture() {
+		if(_sdl_texture) {
+			SDL_DestroyTexture(_sdl_texture);
+			_sdl_texture = nullptr;
+		}
+	}
+
 	SDL_Texture *_sdl_texture;
-	Screen& _screen;
-	Coordi _size;
+	double _scale = 1.;
 };
 
 #endif // _TEXTURE_H_

@@ -27,6 +27,8 @@ include_directories(
 	#${SDL2_IMAGE_INCLUDE_DIRS}
 )
 
+set_property(TARGET aether PROPERTY CXX_STANDARD 17)
+
 target_link_libraries(
 	aether
 	${SDL2_LIBRARIES}
