@@ -2,6 +2,11 @@
 #ifndef _GAME_LOOP_H_
 #define _GAME_LOOP_H_
 
+#include <chrono>
+#include <thread>
+//#include <unistd.h>
+#include <time.h>
+
 #include <SDL2/SDL.h>
 #include <fmt/printf.h>
 
@@ -9,21 +14,38 @@
 #include "user_interface.h"
 #include "entities/entity_storage.h"
 #include "graphics/screen.h"
+#include "accumulator.h"
 
 class GameLoop {
 public:
 
-	GameLoop(Screen& screen, UserInterface& ui)
-		: _screen(screen), _user_interface(ui) {
+	GameLoop(Screen& screen, UserInterface& ui, EntityStorage& storage)
+		: _screen(screen), _user_interface(ui), _storage(storage) {
 	}
 
 	void run() {
+		using namespace std;
+		using namespace std::chrono;
+		using frame = duration<int32_t, ratio<1, 100>>;
 
+		Accumulator acc(nanoseconds {5 * 1000000000L});
+		nanoseconds dt { 0 };
+		time_point<steady_clock> start = steady_clock::now();
 		while(!_stop) {
 			_process_events();
-
+			_update_everything(dt);
 			_render_everything();
-			// TODO: regulate frame rate, update things in the world, etc..
+
+			this_thread::sleep_until(start + frame{ 1 });
+
+			dt = steady_clock::now() - start;
+
+			start = steady_clock::now(); // Frame starts here (so it includes loop overhead)
+			if(acc(dt)) {
+				fmt::print("dur={} {}\n", acc.value().count(), acc.calls());
+				fmt::print("FPS={}\n", 1000000000. / acc.mean().count());
+			}
+
 		} // while !stop
 	} // run()
 
@@ -56,6 +78,12 @@ private:
 		} // while event
 	}
 
+	void _update_everything(std::chrono::nanoseconds dt) {
+		for(auto e: _storage) {
+			e.graphics().update(dt);
+		}
+	}
+
 	void _render_everything() {
 		auto guard = _screen.begin_render_onto();
 		_user_interface.render(_screen.sdl_renderer());
@@ -70,6 +98,7 @@ private:
 
 	Screen &_screen;
 	UserInterface &_user_interface;
+	EntityStorage &_storage;
 };
 
 #endif // _GAME_LOOP_H_

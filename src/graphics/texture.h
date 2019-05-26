@@ -27,6 +27,7 @@ public:
 	}
 
 	Texture(SDL_Renderer *r, Coordi size) {
+		_sdl_renderer = r;
 		_sdl_texture = SDL_CreateTexture(
 			r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
 			size[0], size[1]
@@ -35,6 +36,7 @@ public:
 	}
 
 	Texture(SDL_Renderer *r, const char *filename) {
+		_sdl_renderer = r;
 		_sdl_texture = IMG_LoadTexture(r, filename);
 		if(!_sdl_texture) {
 			throw std::runtime_error(fmt::format("Error loading {}", filename));
@@ -43,16 +45,46 @@ public:
 	}
 
 	Texture(Texture&& other) noexcept {
-		this->_sdl_texture = other._sdl_texture;
+		_sdl_texture = other._sdl_texture;
+		_sdl_renderer = other._sdl_renderer;
 		other._sdl_texture = nullptr;
+		_scale = other._scale;
 	}
 	
 	Texture& operator=(Texture&& other) noexcept {
 		_free_texture();
-		this->_sdl_texture = other._sdl_texture;
+		_sdl_texture = other._sdl_texture;
+		_sdl_renderer = other._sdl_renderer;
 		other._sdl_texture = nullptr;
+		_scale = other._scale;
 		return *this;
 	}
+
+	Texture& operator=(const Texture& other) noexcept {
+		_free_texture();
+		_sdl_renderer = other._sdl_renderer;
+		_scale = other._scale;
+
+		if(other._sdl_texture && _sdl_renderer) {
+			int w, h;
+			SDL_QueryTexture(other._sdl_texture, nullptr, nullptr, &w, &h);
+			_sdl_texture = SDL_CreateTexture(
+				_sdl_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
+				w, h
+			);
+
+			auto prev_target = SDL_GetRenderTarget(_sdl_renderer);
+			SDL_SetRenderDrawBlendMode(_sdl_renderer, SDL_BLENDMODE_NONE);
+			SDL_SetRenderTarget(_sdl_renderer, _sdl_texture);
+			SDL_SetRenderDrawColor(_sdl_renderer, 0, 0, 0, 0);
+			SDL_RenderFillRect(_sdl_renderer, nullptr);
+			SDL_RenderCopy(_sdl_renderer, other._sdl_texture, nullptr, nullptr);
+			SDL_SetRenderTarget(_sdl_renderer, prev_target);
+			SDL_SetTextureBlendMode(_sdl_texture, SDL_BLENDMODE_BLEND);
+		}
+		return *this;
+	}
+
 
 	virtual ~Texture() {
 		_free_texture();
@@ -66,25 +98,35 @@ public:
 		_scale = scale;
 	}
 
+	double scale() { return _scale; }
+
 	Coordi size() const {
 		int w, h;
 		SDL_QueryTexture(_sdl_texture, nullptr, nullptr, &w, &h);
 		return { static_cast<int>(w * _scale), static_cast<int>(h * _scale) };
 	}
 
-	void render(SDL_Renderer* r, std::optional<SDL_Rect> target = std::nullopt) {
+	void render(SDL_Renderer* r,
+			std::optional<Coordi> target = std::nullopt,
+			std::optional<Coordi> target_size = std::nullopt
+	) {
 		if(!_sdl_texture) {
 			return;
 		}
 
 		SDL_Rect tgt { 0, 0, 0, 0 };
 		if(target) {
-			tgt = target.value();
+			tgt.x = target.value()[0];
+			tgt.y = target.value()[1];
+		}
+		if(target_size) {
+			tgt.w = target_size.value()[0];
+			tgt.h = target_size.value()[1];
 		}
 		else {
-			SDL_QueryTexture(_sdl_texture, nullptr, nullptr, &tgt.w, &tgt.h);
-			tgt.w *= _scale;
-			tgt.h *= _scale;
+			Coordi sz = size();
+			tgt.w = sz[0];
+			tgt.h = sz[1];
 		}
 
 		SDL_SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
@@ -114,7 +156,7 @@ public:
 			SDL_RenderFillRect(r, nullptr);
 		}
 		if(flags & CLEAR) {
-			SDL_SetRenderDrawColor(r, 0, 0, 0, 0); // "invisible pink"
+			SDL_SetRenderDrawColor(r, 0, 0, 0, 0);
 			SDL_RenderFillRect(r, nullptr);
 		}
 		
@@ -131,6 +173,7 @@ private:
 	}
 
 	SDL_Texture *_sdl_texture;
+	SDL_Renderer *_sdl_renderer = nullptr; // ONLY tracked for operator=, can we avoid this somehow?
 	double _scale = 1.;
 };
 

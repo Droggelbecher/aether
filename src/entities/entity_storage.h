@@ -49,6 +49,14 @@ class EntityStorage {
 			GraphicsComponent& graphics() { return storage.graphics(id); }
 			PhysicsComponent& physics() { return storage.physics(id); }
 
+			Entity clone() {
+				auto e = storage.make_entity();
+				e.graphics() = graphics();
+				e.physics() = physics();
+				return e;
+			}
+
+			Entity& operator=(const Entity& other) { id = other.id; return *this; }
 			Entity& operator*() { return *this; }
 			bool operator==(const Entity& other) const { return id == other.id; }
 			bool operator!=(const Entity& other) const { return !(*this == other); }
@@ -56,6 +64,12 @@ class EntityStorage {
 			Entity operator++(int) { return { id++, storage }; }
 		};
 		using EntityIterator = Entity;
+
+		EntityStorage() {
+		}
+
+		EntityStorage(const EntityStorage&) = delete;
+		void operator=(const EntityStorage&) = delete;
 
 		GraphicsComponent& graphics(id_t id) { return _graphics[id]; }
 		PhysicsComponent& physics(id_t id) { return _physics[id]; }

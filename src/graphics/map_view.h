@@ -148,25 +148,19 @@ class MapView: public UIElement {
 		void _render_entities(SDL_Renderer* renderer) {
 			auto guard = _canvas.begin_render_onto(renderer);
 
-			SDL_Rect r;
 			for(auto e: _storage) {
 				auto p = transform_2d_screen(
 						transform_3d_2d(
 						transform_hex_3d(
-							e.physics().position()
+							e.graphics().transform(
+								e.physics().position()
+							)
 						)));
 				
 				auto& tex = e.graphics().texture();
 				auto sz = tex.size() * _scale / _scale_max;
 				p -= sz / 2.;
-				r.w = sz[0];
-				r.h = sz[1];
-				r.x = p[0];
-				r.y = p[1];
-
-				e.graphics().texture().render(
-						renderer, r
-				);
+				tex.render(renderer, p, sz);
 			}
 		}
 
