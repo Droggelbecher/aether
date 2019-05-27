@@ -5,6 +5,7 @@
 #include <cmath>
 
 #include <fmt/printf.h>
+#include <xtensor/xtensor.hpp>
 
 #include "../graphics/texture.h"
 #include "../map/hex_coordinate.h"
@@ -47,6 +48,11 @@ class GraphicsComponent {
 			//fmt::print("offs={}\n", offset);
 			return { p.q(), p.r(), p.z() + offset };
 		}
+
+		//static
+		//xt::xtensor<double, 2> transform_batch(xt::xtensor<double, 2> positions) {
+			//return positions + xt::xtensor<double, 2>{ { 0., 0., offset } };
+		//}
 
 	private:
 		Texture _texture;

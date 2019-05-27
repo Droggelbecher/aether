@@ -12,6 +12,7 @@
 #include "entities/entity_storage.h"
 
 #include "graphics/map_view.h"
+#include "map/map_layer.h"
 
 void init_sdl() {
 	auto r = SDL_Init(SDL_INIT_VIDEO);
@@ -28,7 +29,15 @@ void run_game() {
 	EntityStorage storage;
 	Screen screen;
 
-	MapView map_view { screen.sdl_renderer(), { 600, 400 }, storage };
+	auto walkable = make_hexagon<bool>(20, true);
+
+
+	MapView map_view {
+		screen.sdl_renderer(), { 1200, 800 },
+		*walkable,
+		storage
+	};
+
 	UserInterface ui { &map_view };
 	GameLoop loop { screen, ui, storage };
 
@@ -48,11 +57,11 @@ void run_game() {
 	asteroid.graphics().texture() = { screen.sdl_renderer(), "resources/asteroid2.png" };
 	asteroid.graphics().texture().set_scale(.4);
 	asteroid.graphics().set_hovering(.02, 3s, 0s);
-	asteroid.physics().set_position({1, 0, .6});
+	asteroid.physics().set_position({0, 2, .6});
 
-	asteroid.clone().physics().set_position({4, 0, .6});
-	asteroid.clone().physics().set_position({3, 0, .6});
+	asteroid.clone().physics().set_position({1, 0, .6});
 	asteroid.clone().physics().set_position({2, 0, .6});
+	asteroid.clone().physics().set_position({3, 0, .6});
 
 	loop.run();
 }

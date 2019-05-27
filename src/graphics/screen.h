@@ -12,14 +12,14 @@ class Screen {
 
 	public:
 		Screen() {
-			int w = 800;
-			int h = 600;
+			int w = 1200;
+			int h = 800;
 
 			_window = SDL_CreateWindow(
 				"SubSpace 0.1",
 				SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 				w, h,
-				SDL_WINDOW_SHOWN
+				SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
 			);
 			check_sdl(_window != nullptr, "window creation");
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "bilinear");

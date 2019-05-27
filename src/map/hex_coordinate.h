@@ -2,6 +2,7 @@
 #ifndef _HEX_COORDINATE_H_
 #define _HEX_COORDINATE_H_
 
+#include <ostream>
 #include <cassert>
 
 // https://www.redblobgames.com/grids/hexagons/
@@ -46,5 +47,10 @@ private:
 
 using Hex = HexCoordinate<int>;
 using FractionalHex = HexCoordinate<double>;
+
+std::ostream& operator<<(std::ostream& os, const Hex& hex) {
+	os << "Hex{" << hex.q() << ", " << hex.r() << ", " << hex.s() << "}";
+	return os;
+}
 
 #endif // _HEX_COORDINATE_H_

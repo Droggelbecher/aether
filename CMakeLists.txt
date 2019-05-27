@@ -1,10 +1,9 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-#set(CMAKE_CXX_FLAGS
-	#"${CMAKE_CXX_FLAGS} -Wall"
-#)
 add_definitions("-Wall" "-g")
+#add_definitions("-Wall" "-O3")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 
 project(aether)
 
