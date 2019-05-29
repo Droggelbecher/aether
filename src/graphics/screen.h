@@ -22,9 +22,9 @@ class Screen {
 				SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
 			);
 			check_sdl(_window != nullptr, "window creation");
-			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "bilinear");
+			//SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "bilinear");
 
-			_renderer = SDL_CreateRenderer(_window, -1, 0);
+			_renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_TARGETTEXTURE | SDL_RENDERER_ACCELERATED);
 		}
 
 		ScopeGuard begin_render_onto() {

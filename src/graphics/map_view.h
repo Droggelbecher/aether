@@ -33,14 +33,6 @@ namespace {
 	/**
 	 * Transform hex-coordinate (with z-value) to 3d cartesian coordinate
 	 */
-	//xt::xarray<double> transform_hex_3d_batch(const Hex& hex) {
-		//return {
-			//1.5 * hex.q(),
-			//sqrt(3.) / 2. * hex.q() + sqrt(3.) * hex.r(),
-			//hex.z()
-		//};
-	//}
-
 	Coord3d transform_hex_3d(const Hex& hex) {
 		return {
 			1.5 * hex.q(),
