@@ -14,6 +14,8 @@
 #include "graphics/map_view.h"
 #include "map/map_layer.h"
 
+void WinMain() { main(0, nullptr); }
+
 void init_sdl() {
 	auto r = SDL_Init(SDL_INIT_VIDEO);
 	check_sdl(r != -1, "initialize");

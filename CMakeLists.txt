@@ -13,29 +13,36 @@ add_executable(aether ${SOURCES})
 
 # External Dependencies
 
-find_package(SDL2 COMPONENTS gfx REQUIRED)
-#find_package(SDL2_image REQUIRED)
+#find_package(SDL2 COMPONENTS gfx)
+#find_package(#SDL2_image REQUIRED)
 
-find_package(fmt REQUIRED)
+#find_package(fmt REQUIRED)
 find_package(xtensor REQUIRED)
 find_package(xtensor-blas REQUIRED)
 
 include_directories(
+	#	/mingw64/include/
+	/usr/local/include
 	${SRC_DIR}
 	${SDL2_INCLUDE_DIRS}
 	#${SDL2_IMAGE_INCLUDE_DIRS}
 )
+
+#link_directories(
+#	/usr/local/lib/
+#)
 
 set_property(TARGET aether PROPERTY CXX_STANDARD 17)
 
 target_link_libraries(
 	aether
 	${SDL2_LIBRARIES}
-	#${SDL2_IMAGE_LIBRARIES}
+	SDL2
 	SDL2_gfx
 	SDL2_image
-	fmt::fmt
-	blas
+	#fmt::fmt
+	fmt
+	openblas
 )
 
 
