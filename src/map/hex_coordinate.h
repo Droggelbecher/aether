@@ -39,6 +39,10 @@ public:
 		return !(*this == other);
 	}
 
+	HexCoordinate operator+(const HexCoordinate& other) const {
+		return { _q + other._q, _r + other._r, _z + other._z };
+	}
+
 private:
 	T _q;
 	T _r;

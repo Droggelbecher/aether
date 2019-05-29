@@ -36,7 +36,7 @@ public:
 			_update_everything(dt);
 			_render_everything();
 
-			this_thread::sleep_until(start + frame{ 1 });
+			//this_thread::sleep_until(start + frame{ 1 });
 
 			dt = steady_clock::now() - start;
 
@@ -79,9 +79,8 @@ private:
 	}
 
 	void _update_everything(std::chrono::nanoseconds dt) {
-		for(auto e: _storage) {
-			e.graphics().update(dt);
-		}
+		_storage.graphics_storage().update(dt);
+		_user_interface.map_view().update_screen_positions();
 	}
 
 	void _render_everything() {

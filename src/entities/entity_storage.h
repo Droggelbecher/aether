@@ -3,8 +3,8 @@
 #define _ENTITY_STORAGE_H_
 
 #include <vector>
-#include "graphics_component.h"
-#include "physics_component.h"
+#include "graphics_storage.h"
+#include "physics_storage.h"
 
 /**
  * Central storage for all game entities and components.
@@ -46,8 +46,8 @@ class EntityStorage {
 			id_t id;
 			EntityStorage &storage;
 
-			GraphicsComponent& graphics() { return storage.graphics(id); }
-			PhysicsComponent& physics() { return storage.physics(id); }
+			GraphicsComponent graphics() { return storage.graphics(id); }
+			PhysicsComponent physics() { return storage.physics(id); }
 
 			Entity clone() {
 				auto e = storage.make_entity();
@@ -71,16 +71,17 @@ class EntityStorage {
 		EntityStorage(const EntityStorage&) = delete;
 		void operator=(const EntityStorage&) = delete;
 
-		GraphicsComponent& graphics(id_t id) { return _graphics[id]; }
-		PhysicsComponent& physics(id_t id) { return _physics[id]; }
+		GraphicsComponent graphics(id_t id) { return _graphics_storage[id]; }
+		PhysicsComponent physics(id_t id) { return _physics_storage[id]; }
 		
 		Entity make_entity() {
-			emplace_back();
+			_graphics_storage.make_component();
+			_physics_storage.make_component();
 			return { size() - 1, *this };
 		}
 
 		size_t size() {
-			return _physics.size();
+			return _graphics_storage.size();
 		}
 
 		EntityIterator begin() {
@@ -91,14 +92,25 @@ class EntityStorage {
 			return { size(), *this };
 		}
 
-	private:
-		void emplace_back() {
-			_physics.emplace_back();
-			_graphics.emplace_back();
+		GraphicsStorage& graphics_storage() {
+			return _graphics_storage;
 		}
 
-		std::vector<PhysicsComponent> _physics;
-		std::vector<GraphicsComponent> _graphics;
+		PhysicsStorage& physics_storage() {
+			return _physics_storage;
+		}
+
+	private:
+		//void emplace_back() {
+			//_physics.emplace_back();
+			//_graphics.emplace_back();
+		//}
+
+		GraphicsStorage _graphics_storage;
+		PhysicsStorage _physics_storage;
+
+		//std::vector<PhysicsComponent> _physics;
+		//std::vector<GraphicsComponent> _graphics;
 
 };
 

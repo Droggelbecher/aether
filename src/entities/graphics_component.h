@@ -2,6 +2,7 @@
 #ifndef _GRAPHICS_COMPONENT_H_
 #define _GRAPHICS_COMPONENT_H_
 
+/*
 #include <cmath>
 
 #include <fmt/printf.h>
@@ -60,6 +61,7 @@ class GraphicsComponent {
 		double _hovering_a = 0.;
 		std::chrono::nanoseconds _hovering_p { 1000000000L };
 };
+*/
 
 #endif // _GRAPHICS_COMPONENT_H_
 

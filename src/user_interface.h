@@ -6,17 +6,22 @@
 
 #include "commands.h"
 #include "ui_element.h"
+#include "graphics/map_view.h"
 
 class UserInterface {
 
 public:
 
-	UserInterface(std::initializer_list<UIElement*> ui_elements)
-		: _elements { ui_elements }
+	UserInterface(MapView& map_view, std::initializer_list<UIElement*> ui_elements = {})
+		: _map_view(map_view), _elements { ui_elements }
 	{
 	}
 
 	bool process_command(const Command& command) {
+		if(map_view().process_command(command)) {
+			return true;
+		}
+
 		for(auto& e: _elements) {
 			if(e->process_command(command)) {
 				return true;
@@ -26,12 +31,19 @@ public:
 	}
 
 	void render(SDL_Renderer *r) {
+		map_view().render(r);
+
 		for(auto& e: _elements) {
 			e->render(r);
 		}
 	}
 
+	MapView& map_view() {
+		return _map_view;
+	}
+
 private:
+	MapView& _map_view;
 	std::vector<UIElement*> _elements;
 };
 

@@ -38,30 +38,30 @@ void run_game() {
 		storage
 	};
 
-	UserInterface ui { &map_view };
+	UserInterface ui { map_view };
 	GameLoop loop { screen, ui, storage };
 
 	auto asteroid = storage.make_entity();
 	asteroid.graphics().texture() = { screen.sdl_renderer(), "resources/asteroid.png" };
 	asteroid.graphics().texture().set_scale(.2);
 	asteroid.graphics().set_hovering(.02, 3s, 1s);
-	asteroid.physics().set_position({0, 0, .5});
+	asteroid.physics().position() = {0, 0, .5};
 
 	asteroid = storage.make_entity();
 	asteroid.graphics().texture() = { screen.sdl_renderer(), "resources/asteroid1.png" };
 	asteroid.graphics().texture().set_scale(.2);
 	asteroid.graphics().set_hovering(.02, 3s, 2s);
-	asteroid.physics().set_position({0, 1, .4});
+	asteroid.physics().position() = {0, 1, .4};
 
 	asteroid = storage.make_entity();
 	asteroid.graphics().texture() = { screen.sdl_renderer(), "resources/asteroid2.png" };
 	asteroid.graphics().texture().set_scale(.4);
 	asteroid.graphics().set_hovering(.02, 3s, 0s);
-	asteroid.physics().set_position({0, 2, .6});
+	asteroid.physics().position() = {0, 2, .6};
 
-	asteroid.clone().physics().set_position({1, 0, .6});
-	asteroid.clone().physics().set_position({2, 0, .6});
-	asteroid.clone().physics().set_position({3, 0, .6});
+	asteroid.clone().physics().position() = {1, 0, .6};
+	asteroid.clone().physics().position() = {2, 0, .6};
+	asteroid.clone().physics().position() = {3, 0, .6};
 
 	loop.run();
 }

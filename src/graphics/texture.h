@@ -100,15 +100,18 @@ public:
 
 	double scale() { return _scale; }
 
-	Coordi size() const {
+	Coord2i size() const {
 		int w, h;
 		SDL_QueryTexture(_sdl_texture, nullptr, nullptr, &w, &h);
-		return { static_cast<int>(w * _scale), static_cast<int>(h * _scale) };
+		return {
+			static_cast<int16_t>(w * _scale),
+			static_cast<int16_t>(h * _scale)
+		};
 	}
 
 	void render(SDL_Renderer* r,
-			std::optional<Coordi> target = std::nullopt,
-			std::optional<Coordi> target_size = std::nullopt
+			std::optional<Coord2i> target = std::nullopt,
+			std::optional<Coord2i> target_size = std::nullopt
 	) {
 		if(!_sdl_texture) {
 			return;
