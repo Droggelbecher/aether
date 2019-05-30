@@ -30,7 +30,7 @@ public:
 		_sdl_renderer = r;
 		_sdl_texture = SDL_CreateTexture(
 			r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
-			size[0], size[1]
+			size.x(), size.y()
 		);
 		SDL_SetTextureBlendMode(_sdl_texture, SDL_BLENDMODE_BLEND);
 	}
@@ -104,8 +104,8 @@ public:
 		int w, h;
 		SDL_QueryTexture(_sdl_texture, nullptr, nullptr, &w, &h);
 		return {
-			static_cast<int16_t>(w * _scale),
-			static_cast<int16_t>(h * _scale)
+			static_cast<int>(w * _scale),
+			static_cast<int>(h * _scale)
 		};
 	}
 

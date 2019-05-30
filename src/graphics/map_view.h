@@ -2,14 +2,9 @@
 #ifndef _MAP_VIEW_H_
 #define _MAP_VIEW_H_
 
+#include <algorithm>
 #include <SDL2/SDL2_gfxPrimitives.h>
-//#include <SDL2/SDL2_gfxPrimitives_font.h>
 #include <fmt/printf.h>
-#include <xtensor/xfixed.hpp>
-#include <xtensor/xshape.hpp>
-#include <xtensor/xarray.hpp>
-#include <xtensor/xview.hpp>
-#include <xtensor-blas/xlinalg.hpp>
 
 #include "../ui_element.h"
 #include "../commands.h"
@@ -18,17 +13,15 @@
 
 namespace {
 
-	CoordBatch3d hex_polygon() {
-		static const double h = sqrt(3.) / 2.;
-		return {
-			{ - .5, -h, 0. },
-			{   .5, -h, 0. },
-			{  1.0,  0, 0. },
-			{   .5,  h, 0. },
-			{ - .5,  h, 0. },
-			{ -1.0,  0, 0. },
-		};
-	}
+	const double h = sqrt(3.) / 2.;
+	std::array<Coord3d, 6> hex_polygon = {
+		Coord3d { - .5,  -h, 0. },
+		Coord3d {   .5,  -h, 0. },
+		Coord3d {  1.0,  0., 0. },
+		Coord3d {   .5,   h, 0. },
+		Coord3d { - .5,   h, 0. },
+		Coord3d { -1.0,  0., 0. },
+	};
 
 	/**
 	 * Transform hex-coordinate (with z-value) to 3d cartesian coordinate
@@ -41,33 +34,16 @@ namespace {
 		};
 	}
 
+	template<typename iterator_type>
+	CoordBatch2d transform_hex_3d(iterator_type begin_, iterator_type end_) {
+		CoordBatch2d r;
+		std::transform(begin_, end_, std::back_inserter(r), transform_hex_3d);
+		return r;
+	}
+
 	/**
 	 * Transform a 3d coordinate to a 2d axonometric projected coordinate
 	 */
-	CoordBatch2d transform_3d_2d_batch(xt::xtensor<double, 2> a) {
-		static const double alpha = 0. * M_PI;
-		static const double beta = .25 * M_PI;
-
-		static const double calpha = cos(alpha);
-		static const double salpha = sin(alpha);
-		static const double cbeta = cos(beta);
-		static const double sbeta = sin(beta);
-		static const double sacb = salpha * cbeta;
-		static const double cacb = calpha * cbeta;
-
-		static const xt::xtensor_fixed<double, xt::xshape<3, 3> > M = {
-			{ calpha, salpha, 0. },
-			{ sacb, cacb, -sbeta },
-			{ 0, 0, 0 }
-		};
-
-		return xt::transpose(view(
-					xt::linalg::dot(M, xt::transpose(a)),
-					xt::range(0, 2),
-					xt::all()
-		));
-	}
-
 	Coord2d transform_3d_2d(Coord3d a) {
 		/*
 		 * [      1,       0,       0]
@@ -101,6 +77,14 @@ namespace {
 		};
 	}
 
+	template<typename iterator_type>
+	CoordBatch2d transform_3d_2d(iterator_type begin_, iterator_type end_) {
+		CoordBatch2d r;
+		std::transform(begin_, end_, std::back_inserter(r),
+				[&](const Coord3d& c) { return transform_3d_2d(c); }
+		);
+		return r;
+	}
 
 } // namespace
 
@@ -131,7 +115,7 @@ class MapView: public UIElement {
 		}
 
 		bool process_concrete_command(const DragCommand& cmd) {
-			_offset += xt::xarray<double>{
+			_offset += Coord2d {
 				static_cast<double>(cmd.xrel),
 				static_cast<double>(cmd.yrel)
 			};
@@ -163,30 +147,28 @@ class MapView: public UIElement {
 	private:
 
 		void _render_grid(SDL_Renderer* renderer) {
-			using xt::xarray;
-			using xt::view;
-			using xt::all;
-			using xt::range;
-			using xt::strided_view;
-
 			if(!_dirty) {
 				return;
 			}
 
-			// guard will just make sure to reset renderer state when it goes out of scope
+			// guard will make sure to reset renderer state when it goes out of scope
 			auto guard = _grid_canvas.begin_render_onto(renderer, Texture::CLEAR);
 
-			auto hex = transform_3d_2d_batch(hex_polygon());
+			static auto hex2d = transform_3d_2d(hex_polygon.begin(), hex_polygon.end());
 
 			for(Hex p: _walkable) {
 				auto w = _walkable[p];
-
 				if(!w) { continue; }
 
 				auto offset = transform_3d_2d(transform_hex_3d(p));
-				auto poly = transform_2d_screen_batch(hex + offset);
-				auto xs = xarray<int16_t>(view(poly, all(), 0));
-				auto ys = xarray<int16_t>(view(poly, all(), 1));
+
+				std::vector<int16_t> xs;
+				std::transform(hex2d.begin(), hex2d.end(), std::back_inserter(xs),
+						[&](Coord2d c) { return transform_2d_screen(c + offset).x(); });
+
+				std::vector<int16_t> ys;
+				std::transform(hex2d.begin(), hex2d.end(), std::back_inserter(ys),
+						[&](Coord2d c) { return transform_2d_screen(c + offset).y(); });
 
 				filledPolygonRGBA(renderer, xs.data(), ys.data(), xs.size(), 200, 200, 200, 80);
 				aapolygonRGBA(renderer, xs.data(), ys.data(), xs.size(), 255, 255, 255, 120);
@@ -208,15 +190,19 @@ class MapView: public UIElement {
 			}
 		}
 
+		Coord2i transform_2d_screen(Coord2d a) {
+			return (a * _scale + _offset).as_type<int>();
+		}
+
 		/**
 		 * Transformations due to panning & zooming
 		 */
-		CoordBatch2i transform_2d_screen_batch(CoordBatch2d a) {
-			return a * _scale + _offset;
-		}
-
-		Coord2i transform_2d_screen(Coord2d a) {
-			return a * _scale + _offset;
+		CoordBatch2i transform_2d_screen_batch(const CoordBatch2d& a) {
+			CoordBatch2i r;
+			std::transform(a.begin(), a.end(), std::back_inserter(r),
+					[&](const Coord2d& c) { return transform_2d_screen(c); }
+			);
+			return r;
 		}
 
 		Texture _canvas;
@@ -224,7 +210,7 @@ class MapView: public UIElement {
 		static constexpr double _scale_min = 10.;
 		static constexpr double _scale_max = 100.;
 		double _scale = _scale_max;
-		xt::xarray<double> _offset = { 100., 100. };
+		Coord2d _offset = { 100., 100. };
 		MapLayer<bool>& _walkable;
 		EntityStorage& _storage;
 		bool _dirty = true;

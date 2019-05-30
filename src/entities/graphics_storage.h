@@ -3,6 +3,7 @@
 #define _GRAPHICS_STORAGE_H_
 
 #include <cmath>
+#include <chrono>
 #include <fmt/printf.h>
 #include "../graphics/texture.h"
 #include "../map/hex_coordinate.h"
@@ -35,12 +36,6 @@ class GraphicsStorage {
 					screen_position() = other.screen_position();
 					return *this;
 				}
-
-				//void update_screen_position(const Hex& p) {
-					//screen_position() = {
-						//p.q(), p.r(), p.z() + hovering().offset
-					//};
-				//}
 
 				void set_hovering(double amplitude, std::chrono::nanoseconds period, std::chrono::nanoseconds b = std::chrono::nanoseconds{ 0 } ) {
 					auto& h = _storage.hovering(_id);
@@ -123,13 +118,6 @@ class GraphicsStorage {
 				h.offset = h.a * sin(2. * M_PI * (static_cast<double>(h.t.count()) / h.p.count()));
 			}
 		}
-
-		//void _update_drawing_position() {
-			//for(size_t i = 0; i < size(); i++) {
-				//auto& draw = _drawing_positions[i];
-				//auto& phys = _s
-
-			//for(auto& p: _drawing_positions) {
 
 		std::vector<Texture> _textures;
 		std::vector<Hovering> _hoverings;

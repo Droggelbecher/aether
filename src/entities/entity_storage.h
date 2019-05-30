@@ -101,17 +101,9 @@ class EntityStorage {
 		}
 
 	private:
-		//void emplace_back() {
-			//_physics.emplace_back();
-			//_graphics.emplace_back();
-		//}
 
 		GraphicsStorage _graphics_storage;
 		PhysicsStorage _physics_storage;
-
-		//std::vector<PhysicsComponent> _physics;
-		//std::vector<GraphicsComponent> _graphics;
-
 };
 
 #endif // _ENTITY_STORAGE_H_

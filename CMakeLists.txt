@@ -14,11 +14,7 @@ add_executable(aether ${SOURCES})
 # External Dependencies
 
 find_package(SDL2 COMPONENTS gfx REQUIRED)
-#find_package(SDL2_image REQUIRED)
-
 find_package(fmt REQUIRED)
-find_package(xtensor REQUIRED)
-find_package(xtensor-blas REQUIRED)
 
 include_directories(
 	${SRC_DIR}
@@ -35,7 +31,6 @@ target_link_libraries(
 	SDL2_gfx
 	SDL2_image
 	fmt::fmt
-	blas
 )
 
 

@@ -26,7 +26,7 @@ public:
 	void run() {
 		using namespace std;
 		using namespace std::chrono;
-		using frame = duration<int32_t, ratio<1, 100>>;
+		//using frame = duration<int32_t, ratio<1, 100>>;
 
 		Accumulator acc(nanoseconds {5 * 1000000000L});
 		nanoseconds dt { 0 };
