@@ -16,7 +16,7 @@ class Screen {
 			int h = 800;
 
 			_window = SDL_CreateWindow(
-				"SubSpace 0.1",
+				"AEther",
 				SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 				w, h,
 				SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE

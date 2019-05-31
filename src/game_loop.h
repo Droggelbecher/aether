@@ -28,7 +28,7 @@ public:
 		using namespace std::chrono;
 		//using frame = duration<int32_t, ratio<1, 100>>;
 
-		Accumulator acc(nanoseconds {5 * 1000000000L});
+		Accumulator acc(nanoseconds {5 * 1000000000ULL});
 		nanoseconds dt { 0 };
 		time_point<steady_clock> start = steady_clock::now();
 		while(!_stop) {
@@ -42,7 +42,6 @@ public:
 
 			start = steady_clock::now(); // Frame starts here (so it includes loop overhead)
 			if(acc(dt)) {
-				fmt::print("dur={} {}\n", acc.value().count(), acc.calls());
 				fmt::print("FPS={}\n", 1000000000. / acc.mean().count());
 			}
 
@@ -63,6 +62,12 @@ private:
 				case SDL_MOUSEMOTION:
 					if(event.motion.state & SDL_BUTTON_LMASK) {
 						_emit(DragCommand { event.motion.xrel, event.motion.yrel });
+					}
+					break;
+
+				case SDL_MOUSEBUTTONDOWN:
+					if(event.button.button == SDL_BUTTON_LEFT) {
+						_emit(DebugClickCommand { event.button.x, event.button.y });
 					}
 					break;
 

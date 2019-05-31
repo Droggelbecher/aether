@@ -22,9 +22,16 @@ struct ZoomCommand: BaseCommand {
 	int y;
 };
 
+struct DebugClickCommand: BaseCommand {
+	DebugClickCommand(int x, int y): x(x), y(y) {}
+	int x;
+	int y;
+};
+
 using Command = std::variant<
 	DragCommand,
-	ZoomCommand
+	ZoomCommand,
+	DebugClickCommand
 >;
 
 #endif // _COMMANDS_H_

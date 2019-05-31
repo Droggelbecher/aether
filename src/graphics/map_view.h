@@ -13,6 +13,20 @@
 
 namespace {
 
+	// Private, not instance-specific functions for map view.
+	// Mostly coordinate conversion.
+	//
+	// We consider the following coordinate systems:
+	//
+	// Name     Coordinate type Description
+	// -------- --------------- -----------------------------------------
+	// "hex"    Hex             3d position using hex map-coordinates incl. height values
+	// "3d"     Coord3d         3d position with Hex translated to cartesian
+	// "2d"     Coord2d         2d position after fixed perspective transformation
+	// "screen" Coord2i         2d (int) position after perspective transform AND map view transform (panning+scale)
+	//                          (actual pixel coordinates)
+	//                          only system that is map-view state dependent
+
 	const double h = sqrt(3.) / 2.;
 	std::array<Coord3d, 6> hex_polygon = {
 		Coord3d { - .5,  -h, 0. },
@@ -41,36 +55,35 @@ namespace {
 		return r;
 	}
 
+	/*
+	 * [      1,       0,       0]
+	 * [      0,  cos(b), -sin(b)]
+	 * [      0,  sin(b),  cos(b)]
+	 *
+	 * [ cos(a), -sin(a), 0 ]
+	 * [ sin(a),  cos(a), 0 ]
+	 * [      0,       0, 1 ]
+	 *
+	 * =>
+	 *
+	 * [ cos(a), -sin(a), 0 ]
+	 * [ sin(a)cos(b), cos(a)cos(b), -sin(b) ]
+	 * [ sin(a)sin(b), cos(a)sin(b), cos(b) ]
+	 */
+
+	static const double alpha = 0. * M_PI;
+	static const double beta = .25 * M_PI;
+	static const double calpha = cos(alpha);
+	static const double salpha = sin(alpha);
+	static const double cbeta = cos(beta);
+	static const double sbeta = sin(beta);
+	static const double sacb = salpha * cbeta;
+	static const double cacb = calpha * cbeta;
+
 	/**
 	 * Transform a 3d coordinate to a 2d axonometric projected coordinate
 	 */
 	Coord2d transform_3d_2d(Coord3d a) {
-		/*
-		 * [      1,       0,       0]
-		 * [      0,  cos(b), -sin(b)]
-		 * [      0,  sin(b),  cos(b)]
-		 *
-		 * [ cos(a), -sin(a), 0 ]
-		 * [ sin(a),  cos(a), 0 ]
-		 * [      0,       0, 1 ]
-		 *
-		 * =>
-		 *
-		 * [ cos(a), -sin(a), 0 ]
-		 * [ sin(a)cos(b), cos(a)cos(b), -sin(b) ]
-		 * [ sin(a)sin(b), cos(a)sin(b), cos(b) ]
-		 */
-
-		static const double alpha = 0. * M_PI;
-		static const double beta = .25 * M_PI;
-
-		static const double calpha = cos(alpha);
-		static const double salpha = sin(alpha);
-		static const double cbeta = cos(beta);
-		static const double sbeta = sin(beta);
-		static const double sacb = salpha * cbeta;
-		static const double cacb = calpha * cbeta;
-
 		return {
 			a[0] * calpha - a[1] * salpha,
 			a[0] * sacb + a[1] * cacb - a[2] * sbeta
@@ -84,6 +97,13 @@ namespace {
 				[&](const Coord3d& c) { return transform_3d_2d(c); }
 		);
 		return r;
+	}
+
+	Coord3d transform_2d_3d(Coord2d a) {
+		return {
+			a[0] * (1. - salpha*salpha) + a[1] * calpha * salpha / cbeta,
+			-a[0] * salpha + a[1] * calpha / cbeta
+		};
 	}
 
 } // namespace
@@ -120,6 +140,11 @@ class MapView: public UIElement {
 				static_cast<double>(cmd.yrel)
 			};
 			_dirty = true;
+			return true;
+		}
+
+		bool process_concrete_command(const DebugClickCommand& cmd) {
+			fmt::print("({} {}) -> {}\n", cmd.x, cmd.y, transform_2d_3d(transform_screen_2d({cmd.x, cmd.y})));
 			return true;
 		}
 
@@ -190,12 +215,15 @@ class MapView: public UIElement {
 			}
 		}
 
+		/**
+		 * Transformations due to panning & zooming
+		 */
 		Coord2i transform_2d_screen(Coord2d a) {
 			return (a * _scale + _offset).as_type<int>();
 		}
 
 		/**
-		 * Transformations due to panning & zooming
+		 * Transformations due to panning & zooming (batch)
 		 */
 		CoordBatch2i transform_2d_screen_batch(const CoordBatch2d& a) {
 			CoordBatch2i r;
@@ -203,6 +231,10 @@ class MapView: public UIElement {
 					[&](const Coord2d& c) { return transform_2d_screen(c); }
 			);
 			return r;
+		}
+
+		Coord2d transform_screen_2d(Coord2i a) {
+			return ((a - _offset) / _scale).as_type<Coord2d>();
 		}
 
 		Texture _canvas;
