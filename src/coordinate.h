@@ -90,6 +90,10 @@ class Coordinate {
 		T& y() { return _values[1]; }
 		T& z() { return _values[2]; }
 
+		const T& x() const { return _values[0]; }
+		const T& y() const { return _values[1]; }
+		const T& z() const { return _values[2]; }
+
 		static constexpr size_t dimensions() { return N; }
 
 		template<typename U>

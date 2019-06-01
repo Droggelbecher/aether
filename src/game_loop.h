@@ -60,7 +60,7 @@ private:
 		while(SDL_PollEvent(&event)) {
 			switch(event.type) {
 				case SDL_MOUSEMOTION:
-					if(event.motion.state & SDL_BUTTON_LMASK) {
+					if(event.motion.state & SDL_BUTTON_MMASK) {
 						_emit(DragCommand { event.motion.xrel, event.motion.yrel });
 					}
 					break;

@@ -55,6 +55,14 @@ namespace {
 		return r;
 	}
 
+	Hex transform_3d_hex(const Coord3d& c) {
+		return {
+			static_cast<int>(std::lround((2./3.) * c.x())),
+			static_cast<int>(std::lround((1./sqrt(3.)) * c.y() - (1./3.)*c.x())),
+			c.z()
+		};
+	}
+
 	/*
 	 * [      1,       0,       0]
 	 * [      0,  cos(b), -sin(b)]
@@ -144,7 +152,10 @@ class MapView: public UIElement {
 		}
 
 		bool process_concrete_command(const DebugClickCommand& cmd) {
-			fmt::print("({} {}) -> {}\n", cmd.x, cmd.y, transform_2d_3d(transform_screen_2d({cmd.x, cmd.y})));
+			auto hex = transform_3d_hex(transform_2d_3d(transform_screen_2d({cmd.x, cmd.y})));
+			fmt::print("({} {}) -> {}\n", cmd.x, cmd.y, hex);
+			_selected = hex;
+			_dirty = true;
 			return true;
 		}
 
@@ -199,6 +210,21 @@ class MapView: public UIElement {
 				aapolygonRGBA(renderer, xs.data(), ys.data(), xs.size(), 255, 255, 255, 120);
 			}
 
+			if(_selected != Hex::invalid) {
+				auto offset = transform_3d_2d(transform_hex_3d(_selected));
+
+				std::vector<int16_t> xs;
+				std::transform(hex2d.begin(), hex2d.end(), std::back_inserter(xs),
+						[&](Coord2d c) { return transform_2d_screen(c + offset).x(); });
+
+				std::vector<int16_t> ys;
+				std::transform(hex2d.begin(), hex2d.end(), std::back_inserter(ys),
+						[&](Coord2d c) { return transform_2d_screen(c + offset).y(); });
+
+				filledPolygonRGBA(renderer, xs.data(), ys.data(), xs.size(), 50, 200, 50, 200);
+				aapolygonRGBA(renderer, xs.data(), ys.data(), xs.size(), 255, 255, 255, 255);
+			}
+
 			_dirty = false;
 		}
 
@@ -236,6 +262,8 @@ class MapView: public UIElement {
 		Coord2d transform_screen_2d(Coord2i a) {
 			return ((a - _offset) / _scale).as_type<Coord2d>();
 		}
+
+		Hex _selected = Hex::invalid;
 
 		Texture _canvas;
 		Texture _grid_canvas;

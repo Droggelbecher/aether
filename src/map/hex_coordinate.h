@@ -4,6 +4,7 @@
 
 #include <ostream>
 #include <cassert>
+#include <limits>
 
 // https://www.redblobgames.com/grids/hexagons/
 // https://www.redblobgames.com/grids/hexagons/implementation.html#fractionalhex
@@ -43,6 +44,8 @@ public:
 		return { _q + other._q, _r + other._r, _z + other._z };
 	}
 
+	static const HexCoordinate<T> invalid;
+	
 private:
 	T _q;
 	T _r;
@@ -56,5 +59,12 @@ std::ostream& operator<<(std::ostream& os, const Hex& hex) {
 	os << "Hex{" << hex.q() << ", " << hex.r() << ", " << hex.s() << "}";
 	return os;
 }
+
+template<typename T>
+const HexCoordinate<T> HexCoordinate<T>::invalid {
+	std::numeric_limits<T>::has_quiet_NaN ? std::numeric_limits<T>::quiet_NaN() : std::numeric_limits<T>::lowest(),
+	std::numeric_limits<T>::has_quiet_NaN ? std::numeric_limits<T>::quiet_NaN() : std::numeric_limits<T>::lowest(),
+	0
+};
 
 #endif // _HEX_COORDINATE_H_
