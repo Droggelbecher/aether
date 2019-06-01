@@ -49,10 +49,10 @@ class EntityStorage {
 			GraphicsComponent graphics() { return storage.graphics(id); }
 			PhysicsComponent physics() { return storage.physics(id); }
 
-			Entity clone() {
+			Entity clone(SDL_Renderer *renderer) {
 				auto e = storage.make_entity();
-				e.graphics() = graphics();
-				e.physics() = physics();
+				e.graphics().copy_from(graphics(), renderer);
+				e.physics().copy_from(physics());
 				return e;
 			}
 

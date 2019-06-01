@@ -21,13 +21,16 @@ class PhysicsStorage {
 					: _storage(other._storage), _id(other._id) {
 				}
 
-				PhysicsComponent& operator=(const PhysicsComponent& other) {
-					position() = other.position();
+				PhysicsComponent& operator=(const PhysicsComponent& other) = delete;
+
+				PhysicsComponent& copy_from(const PhysicsComponent& other) {
+					set_position(other.position());
 					return *this;
 				}
 
-				Hex& position() {
-					return _storage.position(_id);
+				PhysicsComponent& set_position(const Hex& pos) {
+					_storage.set_position(_id, pos);
+					return *this;
 				}
 
 				const Hex& position() const {
@@ -39,7 +42,11 @@ class PhysicsStorage {
 				id_t _id;
 		}; // PhysicsComponent
 
-		Hex& position(id_t id) {
+		void set_position(id_t id, const Hex& pos) {
+			_positions[id] = pos;
+		}
+
+		const Hex& position(id_t id) const {
 			return _positions[id];
 		}
 

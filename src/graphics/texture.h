@@ -27,7 +27,6 @@ public:
 	}
 
 	Texture(SDL_Renderer *r, Coordi size) {
-		_sdl_renderer = r;
 		_sdl_texture = SDL_CreateTexture(
 			r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
 			size.x(), size.y()
@@ -36,7 +35,6 @@ public:
 	}
 
 	Texture(SDL_Renderer *r, const char *filename) {
-		_sdl_renderer = r;
 		_sdl_texture = IMG_LoadTexture(r, filename);
 		if(!_sdl_texture) {
 			throw std::runtime_error(fmt::format("Error loading {}", filename));
@@ -46,7 +44,6 @@ public:
 
 	Texture(Texture&& other) noexcept {
 		_sdl_texture = other._sdl_texture;
-		_sdl_renderer = other._sdl_renderer;
 		other._sdl_texture = nullptr;
 		_scale = other._scale;
 	}
@@ -54,37 +51,36 @@ public:
 	Texture& operator=(Texture&& other) noexcept {
 		_free_texture();
 		_sdl_texture = other._sdl_texture;
-		_sdl_renderer = other._sdl_renderer;
 		other._sdl_texture = nullptr;
 		_scale = other._scale;
 		return *this;
 	}
 
-	Texture& operator=(const Texture& other) noexcept {
-		_free_texture();
-		_sdl_renderer = other._sdl_renderer;
-		_scale = other._scale;
+	Texture& operator=(const Texture& other) = delete;
 
-		if(other._sdl_texture && _sdl_renderer) {
+	Texture clone(SDL_Renderer *sdl_renderer) const {
+		Texture r;
+		r._scale = _scale;
+
+		if(_sdl_texture && sdl_renderer) {
 			int w, h;
-			SDL_QueryTexture(other._sdl_texture, nullptr, nullptr, &w, &h);
-			_sdl_texture = SDL_CreateTexture(
-				_sdl_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
+			SDL_QueryTexture(_sdl_texture, nullptr, nullptr, &w, &h);
+			r._sdl_texture = SDL_CreateTexture(
+				sdl_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
 				w, h
 			);
 
-			auto prev_target = SDL_GetRenderTarget(_sdl_renderer);
-			SDL_SetRenderDrawBlendMode(_sdl_renderer, SDL_BLENDMODE_NONE);
-			SDL_SetRenderTarget(_sdl_renderer, _sdl_texture);
-			SDL_SetRenderDrawColor(_sdl_renderer, 0, 0, 0, 0);
-			SDL_RenderFillRect(_sdl_renderer, nullptr);
-			SDL_RenderCopy(_sdl_renderer, other._sdl_texture, nullptr, nullptr);
-			SDL_SetRenderTarget(_sdl_renderer, prev_target);
-			SDL_SetTextureBlendMode(_sdl_texture, SDL_BLENDMODE_BLEND);
+			auto prev_target = SDL_GetRenderTarget(sdl_renderer);
+			SDL_SetRenderDrawBlendMode(sdl_renderer, SDL_BLENDMODE_NONE);
+			SDL_SetRenderTarget(sdl_renderer, r._sdl_texture);
+			SDL_SetRenderDrawColor(sdl_renderer, 0, 0, 0, 0);
+			SDL_RenderFillRect(sdl_renderer, nullptr);
+			SDL_RenderCopy(sdl_renderer, _sdl_texture, nullptr, nullptr);
+			SDL_SetRenderTarget(sdl_renderer, prev_target);
+			SDL_SetTextureBlendMode(r._sdl_texture, SDL_BLENDMODE_BLEND);
 		}
-		return *this;
+		return r;
 	}
-
 
 	virtual ~Texture() {
 		_free_texture();
@@ -94,8 +90,14 @@ public:
 		return _sdl_texture;
 	}
 
-	void set_scale(double scale) {
+	Texture& set_scale(double scale) & {
 		_scale = scale;
+		return *this;
+	}
+
+	Texture&& set_scale(double scale) && {
+		_scale = scale;
+		return std::move(*this);
 	}
 
 	double scale() { return _scale; }
@@ -112,7 +114,7 @@ public:
 	void render(SDL_Renderer* r,
 			std::optional<Coord2i> target = std::nullopt,
 			std::optional<Coord2i> target_size = std::nullopt
-	) {
+	) const {
 		if(!_sdl_texture) {
 			return;
 		}
@@ -176,7 +178,7 @@ private:
 	}
 
 	SDL_Texture *_sdl_texture;
-	SDL_Renderer *_sdl_renderer = nullptr; // ONLY tracked for operator=, can we avoid this somehow?
+	//SDL_Renderer *_sdl_renderer = nullptr; // ONLY tracked for operator=, can we avoid this somehow?
 	double _scale = 1.;
 };
 

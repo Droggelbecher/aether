@@ -40,8 +40,6 @@ class MapLayer {
 
 	public:
 		MapLayer(Hex dimensions) : _dimensions(dimensions) {
-			//resize();
-			//auto sz = _dimensions.q() * _dimensions.r();
 			_cells = new T[size()];
 		}
 
@@ -60,20 +58,7 @@ class MapLayer {
 			);
 		}
 
-		//auto begin() {
-			//return _cells;
-		//}
-
-		//auto end() {
-			//return _cells + size();
-		//}
-
 	private:
-
-		//void resize() {
-			//auto sz = _dimensions.q() * _dimensions.r();
-			//_cells.resize(sz); // TODO: if this size doesn't change during runtime, a vector is overkill
-		//}
 
 		size_t hex2index(Hex h) {
 			assert(h.q() < _dimensions.q());
@@ -86,13 +71,11 @@ class MapLayer {
 		size_t size() { return _dimensions.q() * _dimensions.r(); }
 
 		Hex index2hex(size_t i) {
-			//assert(i < _cells.size());
 			int i_ = i;
 			return { i_ % _dimensions.q(), static_cast<int>(i_ / _dimensions.q()) };
 		}
 
 		const Hex _dimensions;
-		//std::vector<T> _cells;
 		T *_cells;
 };
 

@@ -162,12 +162,13 @@ class MapView: public UIElement {
 		void update_screen_positions() {
 			for(auto e: _storage) {
 				const Hex& pos = e.physics().position();
-				e.graphics().screen_position() =
+				e.graphics().set_screen_position(
 					transform_2d_screen(
 					transform_3d_2d(
 					transform_hex_3d(
 						pos + e.graphics().offset()
-					)));
+					)))
+				);
 			}
 		}
 
