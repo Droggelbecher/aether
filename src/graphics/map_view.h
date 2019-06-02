@@ -6,7 +6,7 @@
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <fmt/printf.h>
 
-#include "../ui_element.h"
+#include "../ui/ui_element.h"
 #include "../commands.h"
 #include "../entities/entity_storage.h"
 #include "../map/map_layer.h"
@@ -138,28 +138,43 @@ class MapView: public UIElement {
 			  _storage(storage)
 		{ }
 
-		bool process_command(const Command& command) override {
-			return std::visit(
-					[&](auto&& cmd) { return process_concrete_command(cmd); },
-					command
-					);
+		bool process_event(const SDL_Event& event) override {
+			switch(event.type) {
+				case SDL_MOUSEMOTION:
+					// TODO: make this connection configurable (through lua?)
+					if(event.motion.state & SDL_BUTTON_MMASK) {
+						drag({
+							static_cast<double>(event.motion.xrel),
+							static_cast<double>(event.motion.yrel)
+						});
+						return true;
+					}
+					break;
+
+				//case SDL_MOUSEBUTTONDOWN:
+					//if(event.button.button == SDL_BUTTON_LEFT) {
+						//_emit(DebugClickCommand { event.button.x, event.button.y });
+					//}
+					//break;
+
+				case SDL_MOUSEWHEEL:
+					zoom(event.wheel.y);
+					return true;
+					break;
+			}
+			return false;
 		}
 
-		bool process_concrete_command(const ZoomCommand& cmd) {
-			_scale += cmd.y * 10.;
+		void zoom(double rel_steps) {
+			_scale += rel_steps * 10.;
 			_scale = std::min(_scale, _scale_max);
 			_scale = std::max(_scale, _scale_min);
 			_dirty = true;
-			return true;
 		}
 
-		bool process_concrete_command(const DragCommand& cmd) {
-			_offset += Coord2d {
-				static_cast<double>(cmd.xrel),
-				static_cast<double>(cmd.yrel)
-			};
+		void drag(const Coord2d& vector) {
+			_offset += vector;
 			_dirty = true;
-			return true;
 		}
 
 		bool process_concrete_command(const DebugClickCommand& cmd) {
@@ -170,12 +185,8 @@ class MapView: public UIElement {
 			return true;
 		}
 
-		void update_screen_positions() {
-			for(auto e: _storage) {
-				const Hex& pos = e.physics().position();
-				const auto screen_pos = transform_hex_screen(pos + e.graphics().offset());
-				e.graphics().set_screen_position(screen_pos);
-			}
+		void update(std::chrono::nanoseconds) override {
+			_update_screen_positions();
 		}
 
 		void render(SDL_Renderer *renderer) override {
@@ -188,6 +199,14 @@ class MapView: public UIElement {
 		};
 
 	private:
+
+		void _update_screen_positions() {
+			for(auto e: _storage) {
+				const Hex& pos = e.physics().position();
+				const auto screen_pos = transform_hex_screen(pos + e.graphics().offset());
+				e.graphics().set_screen_position(screen_pos);
+			}
+		}
 
 		void _render_grid(SDL_Renderer* renderer) {
 			if(!_dirty) {

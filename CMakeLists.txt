@@ -1,8 +1,8 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-#add_definitions("-Wall" "-g")
-add_definitions("-Wall" "-O3" "-g")
+add_definitions("-Wall" "-g")
+#add_definitions("-Wall" "-O3" "-g")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 
 project(aether)
@@ -30,6 +30,7 @@ target_link_libraries(
 	#${SDL2_IMAGE_LIBRARIES}
 	SDL2_gfx
 	SDL2_image
+	SDL2_ttf
 	fmt::fmt
 )
 

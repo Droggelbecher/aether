@@ -4,7 +4,6 @@
 
 #include <fmt/printf.h>
 #include <SDL2/SDL.h>
-//#include <xtensor/xarray.hpp>
 
 #include "sdl_utils.h"
 #include "graphics/screen.h"
@@ -13,10 +12,17 @@
 
 #include "graphics/map_view.h"
 #include "map/map_layer.h"
+#include "ui/terminal.h"
 
 void init_sdl() {
 	auto r = SDL_Init(SDL_INIT_VIDEO);
-	check_sdl(r != -1, "initialize");
+	check_sdl(r != -1, "initialize SDL");
+
+	r = IMG_Init(IMG_INIT_PNG);
+	check_sdl(r == IMG_INIT_PNG, "initialize IMG");
+
+	r = TTF_Init();
+	check_sdl(r != -1, "initialize TTF");
 } // init_sdl()
 
 
@@ -38,7 +44,14 @@ void run_game() {
 		storage
 	};
 
-	UserInterface ui { map_view };
+	Terminal terminal {
+		{ 0, 0 }, { 1200, 200 },
+		"resources/fonts/SourceCodePro/SourceCodePro-Regular.ttf",
+		11
+	};
+
+
+	UserInterface ui { &map_view, &terminal };
 	GameLoop loop { screen, ui, storage };
 
 	auto asteroid = storage.make_entity();

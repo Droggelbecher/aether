@@ -11,7 +11,7 @@
 #include <fmt/printf.h>
 
 #include "commands.h"
-#include "user_interface.h"
+#include "ui/user_interface.h"
 #include "entities/entity_storage.h"
 #include "graphics/screen.h"
 #include "accumulator.h"
@@ -58,34 +58,22 @@ private:
 		SDL_Event event;
 
 		while(SDL_PollEvent(&event)) {
-			switch(event.type) {
-				case SDL_MOUSEMOTION:
-					if(event.motion.state & SDL_BUTTON_MMASK) {
-						_emit(DragCommand { event.motion.xrel, event.motion.yrel });
-					}
-					break;
+			if(_user_interface.process_event(event)) {
+				continue;
+			}
 
-				case SDL_MOUSEBUTTONDOWN:
-					if(event.button.button == SDL_BUTTON_LEFT) {
-						_emit(DebugClickCommand { event.button.x, event.button.y });
-					}
-					break;
-
-				case SDL_MOUSEWHEEL:
-					_emit(ZoomCommand { event.wheel.y });
-					break;
-
-				case SDL_QUIT:
-					fmt::print("Goodbye!\n");
-					_stop = true;
-					return;
+			if(event.type == SDL_QUIT) {
+				fmt::print("Goodbye!\n");
+				_stop = true;
+				return;
 			}
 		} // while event
 	}
 
 	void _update_everything(std::chrono::nanoseconds dt) {
 		_storage.graphics_storage().update(dt);
-		_user_interface.map_view().update_screen_positions();
+		//_user_interface.map_view().update_screen_positions();
+		_user_interface.update(dt);
 	}
 
 	void _render_everything() {
@@ -94,9 +82,9 @@ private:
 	}
 
 
-	void _emit(const Command& command) {
-		_user_interface.process_command(command);
-	}
+	//void _emit(const Command& command) {
+		//_user_interface.process_command(command);
+	//}
 
 	bool _stop = false;
 
