@@ -47,7 +47,7 @@ void run_game() {
 	Terminal terminal {
 		{ 0, 0 }, { 1200, 200 },
 		"resources/fonts/SourceCodePro/SourceCodePro-Regular.ttf",
-		11
+		14
 	};
 
 

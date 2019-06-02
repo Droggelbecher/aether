@@ -26,6 +26,10 @@ public:
 	Texture(): _sdl_texture(nullptr) {
 	}
 
+	operator bool() {
+		return _sdl_texture;
+	}
+
 	Texture(SDL_Renderer *r, Coordi size) {
 		_sdl_texture = SDL_CreateTexture(
 			r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
@@ -86,6 +90,12 @@ public:
 		_free_texture();
 	}
 
+	Texture& adopt(SDL_Texture* tex) {
+		_free_texture();
+		_sdl_texture = tex;
+		return *this;
+	}
+
 	SDL_Texture* sdl_texture() {
 		return _sdl_texture;
 	}
@@ -109,6 +119,10 @@ public:
 			static_cast<int>(w * _scale),
 			static_cast<int>(h * _scale)
 		};
+	}
+
+	void set_alpha(uint8_t alpha) {
+		SDL_SetTextureAlphaMod(_sdl_texture, alpha);
 	}
 
 	void render(SDL_Renderer* r,

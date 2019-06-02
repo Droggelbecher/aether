@@ -9,13 +9,14 @@
 #include "ui_element.h"
 #include "../coordinate.h"
 #include "../sdl_utils.h"
+#include "../graphics/texture.h"
 
 class Terminal: public UIElement {
 	public:
 
 		Terminal(Coord2i position, Coord2i size, const char* path, int fontsize)
 			: _position(position), _size(size) {
-			_prompt = "Æther> ";
+			_prompt = "Æther ~> ";
 			if(path) {
 				load_font(path, fontsize);
 			}
@@ -23,19 +24,12 @@ class Terminal: public UIElement {
 
 		virtual ~Terminal() {
 			_free_font();
-			_free_texture();
 		}
 
 		void render(SDL_Renderer *r) override {
 			_update_texture(r);
 
-			int w, h;
-			SDL_QueryTexture(_texture, nullptr, nullptr, &w, &h);
-			SDL_Rect tgt {
-				_position.x(), _position.y(),
-				w, h
-			};
-			SDL_RenderCopy(r, _texture, nullptr, &tgt);
+			_texture.render(r, std::nullopt, _texture.size());
 		}
 
 		void load_font(const char* path, int size) {
@@ -83,24 +77,47 @@ class Terminal: public UIElement {
 			}
 		}
 
-		void _free_texture() {
-			if(_texture) {
-				SDL_DestroyTexture(_texture);
-				_texture = nullptr;
-			}
+		//void _free_texture() {
+			//if(_texture) {
+				//SDL_DestroyTexture(_texture);
+				//_texture = nullptr;
+			//}
+		//}
+
+		Texture _text(SDL_Renderer *renderer, const char *s, SDL_Color fg, SDL_Color bg) {
+			Texture r;
+
+			auto surface = TTF_RenderUTF8_Shaded(_font, s, fg, bg);
+			r.adopt(SDL_CreateTextureFromSurface(renderer, surface));
+			SDL_FreeSurface(surface);
+			return r;
 		}
 
 		void _update_texture(SDL_Renderer *renderer) {
 			if(!_dirty) {
 				return;
 			}
-			auto surface = TTF_RenderUTF8_Shaded(
-					_font, (_prompt + _line).c_str(),
-					_text_color, _background_color
-			);
-			_free_texture();
-			_texture = SDL_CreateTextureFromSurface(renderer, surface);
-			SDL_FreeSurface(surface);
+
+			if(!_texture) {
+				_texture = { renderer, _size };
+				//_texture.set_alpha(200);
+			}
+
+			auto _guard = _texture.begin_render_onto(renderer, Texture::CLEAR);
+
+			// Backdrop
+			// Fill with semi-transparent background
+			SDL_SetRenderDrawColor(renderer, _background_color.r, _background_color.g, _background_color.b, 255);
+			SDL_RenderClear(renderer);
+
+			// Render Prompt
+
+			auto prompt = _text(renderer, _prompt.c_str(), _prompt_color, _background_color);
+			prompt.render(renderer, Coord2i { 10, 10 } );
+
+			auto line = _text(renderer, _line.c_str(), _line_color, _background_color);
+			line.render(renderer, Coord2i { prompt.size().x() + 10, 10 });
+
 			_dirty = false;
 		}
 
@@ -109,9 +126,10 @@ class Terminal: public UIElement {
 		TTF_Font *_font = nullptr;
 		std::string _prompt;
 		std::string _line;
-		SDL_Color _text_color = { 0xff, 0xff, 0xff };
+		SDL_Color _prompt_color = { 0x80, 0xa0, 0xf0 };
+		SDL_Color _line_color = { 0xff, 0xff, 0xff };
 		SDL_Color _background_color = { 0x20, 0x20, 0x20 };
-		SDL_Texture *_texture = nullptr;
+		Texture _texture;
 		bool _dirty = true;
 
 };
