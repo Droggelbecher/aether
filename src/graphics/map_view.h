@@ -28,7 +28,7 @@ namespace {
 	//                          only system that is map-view state dependent
 
 	const double h = sqrt(3.) / 2.;
-	std::array<Coord3d, 6> hex_polygon = {
+	const std::array<Coord3d, 6> hex_polygon = {
 		Coord3d { - .5,  -h, 0. },
 		Coord3d {   .5,  -h, 0. },
 		Coord3d {  1.0,  0., 0. },
@@ -55,6 +55,7 @@ namespace {
 		return r;
 	}
 
+	// ...and back
 	Hex transform_3d_hex(const Coord3d& c) {
 		return {
 			static_cast<int>(std::lround((2./3.) * c.x())),
@@ -67,18 +68,15 @@ namespace {
 	 * [      1,       0,       0]
 	 * [      0,  cos(b), -sin(b)]
 	 * [      0,  sin(b),  cos(b)]
-	 *
+	 * x
 	 * [ cos(a), -sin(a), 0 ]
 	 * [ sin(a),  cos(a), 0 ]
 	 * [      0,       0, 1 ]
-	 *
-	 * =>
-	 *
+	 * =
 	 * [ cos(a), -sin(a), 0 ]
 	 * [ sin(a)cos(b), cos(a)cos(b), -sin(b) ]
 	 * [ sin(a)sin(b), cos(a)sin(b), cos(b) ]
 	 */
-
 	static const double alpha = 0. * M_PI;
 	static const double beta = .25 * M_PI;
 	static const double calpha = cos(alpha);
@@ -91,7 +89,7 @@ namespace {
 	/**
 	 * Transform a 3d coordinate to a 2d axonometric projected coordinate
 	 */
-	Coord2d transform_3d_2d(Coord3d a) {
+	Coord2d transform_3d_2d(const Coord3d& a) {
 		return {
 			a[0] * calpha - a[1] * salpha,
 			a[0] * sacb + a[1] * cacb - a[2] * sbeta
@@ -107,11 +105,24 @@ namespace {
 		return r;
 	}
 
-	Coord3d transform_2d_3d(Coord2d a) {
+	// ...and back
+	Coord3d transform_2d_3d(const Coord2d& a) {
 		return {
 			a[0] * (1. - salpha*salpha) + a[1] * calpha * salpha / cbeta,
 			-a[0] * salpha + a[1] * calpha / cbeta
 		};
+	}
+
+	//
+	// Some convenience shortcuts
+	// 
+	
+	Coord2d transform_hex_2d(const Hex& hex) {
+		return transform_3d_2d(transform_hex_3d(hex));
+	}
+
+	Hex transform_2d_hex(const Coord2d& c) {
+		return transform_3d_hex(transform_2d_3d(c));
 	}
 
 } // namespace
@@ -152,7 +163,7 @@ class MapView: public UIElement {
 		}
 
 		bool process_concrete_command(const DebugClickCommand& cmd) {
-			auto hex = transform_3d_hex(transform_2d_3d(transform_screen_2d({cmd.x, cmd.y})));
+			auto hex = transform_screen_hex({cmd.x, cmd.y});
 			fmt::print("({} {}) -> {}\n", cmd.x, cmd.y, hex);
 			_selected = hex;
 			_dirty = true;
@@ -162,13 +173,8 @@ class MapView: public UIElement {
 		void update_screen_positions() {
 			for(auto e: _storage) {
 				const Hex& pos = e.physics().position();
-				e.graphics().set_screen_position(
-					transform_2d_screen(
-					transform_3d_2d(
-					transform_hex_3d(
-						pos + e.graphics().offset()
-					)))
-				);
+				const auto screen_pos = transform_hex_screen(pos + e.graphics().offset());
+				e.graphics().set_screen_position(screen_pos);
 			}
 		}
 
@@ -262,6 +268,17 @@ class MapView: public UIElement {
 
 		Coord2d transform_screen_2d(Coord2i a) {
 			return ((a - _offset) / _scale).as_type<Coord2d>();
+		}
+
+		// Some convenience shortcuts
+		// 
+		
+		Coord2i transform_hex_screen(const Hex& hex) {
+			return transform_2d_screen(transform_hex_2d(hex));
+		}
+
+		Hex transform_screen_hex(const Coord2i& screen) {
+			return transform_2d_hex(transform_screen_2d(screen));
 		}
 
 		Hex _selected = Hex::invalid;
