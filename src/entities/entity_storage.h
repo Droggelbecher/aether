@@ -3,6 +3,8 @@
 #define _ENTITY_STORAGE_H_
 
 #include <vector>
+#include <cstdint>
+
 #include "graphics_storage.h"
 #include "physics_storage.h"
 
@@ -37,6 +39,7 @@ class EntityStorage {
 	public:
 
 		using id_t = size_t;
+		static constexpr id_t no_id = -1;
 
 		/*
 		 * Handy wrapper around entity ID for accessing its components.
@@ -65,6 +68,10 @@ class EntityStorage {
 		};
 		using EntityIterator = Entity;
 
+		struct EntityCreated {
+			id_t id;
+		};
+
 		EntityStorage() {
 		}
 
@@ -73,11 +80,19 @@ class EntityStorage {
 
 		GraphicsComponent graphics(id_t id) { return _graphics_storage[id]; }
 		PhysicsComponent physics(id_t id) { return _physics_storage[id]; }
+
 		
 		Entity make_entity() {
 			_graphics_storage.make_component();
 			_physics_storage.make_component();
-			return { size() - 1, *this };
+
+			auto id = size() - 1;
+			_entity_created.notify({ id });
+			return { id, *this };
+		}
+
+		Entity operator[](id_t id) {
+			return { id, *this };
 		}
 
 		size_t size() {
@@ -100,10 +115,15 @@ class EntityStorage {
 			return _physics_storage;
 		}
 
+		Observable<EntityCreated>& entity_created() {
+			return _entity_created;
+		}
+
 	private:
 
 		GraphicsStorage _graphics_storage;
 		PhysicsStorage _physics_storage;
+		Observable<EntityCreated> _entity_created;
 };
 
 #endif // _ENTITY_STORAGE_H_

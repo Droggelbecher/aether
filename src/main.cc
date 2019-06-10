@@ -12,6 +12,7 @@
 
 #include "graphics/map_view.h"
 #include "map/map_layer.h"
+#include "map/map.h"
 #include "ui/terminal.h"
 
 void init_sdl() {
@@ -35,13 +36,30 @@ void run_game() {
 	EntityStorage storage;
 	Screen screen;
 
-	auto walkable = make_hexagon<bool>(20, true);
+	// Create map
+
+	Hex map_size = { 21, 21 };
+	auto map = Map { map_size, storage };
+	auto center = map_size / 2;
+
+	/* TBD: Maybe play around with ranges-v3?
+	map.coordinates()
+		| ranges::view::filter([](const Hex& h) { return hex_distance(h, center) <= center.q(); })
+		| ranges::view::for_each([map&](const Hex& h) { map.make_walkable(h); });
+
+	In this particular case a good ole for loop seems more readable tho:
+	*/
+
+	for(auto h: map) {
+		if(hex_distance(h, center) <= center.q()) {
+			map.set_walkable(h);
+		}
+	}
 
 
 	MapView map_view {
 		screen.sdl_renderer(), { 1200, 800 },
-		*walkable,
-		storage
+		map, storage
 	};
 
 	Terminal terminal {
@@ -66,20 +84,20 @@ void run_game() {
 	asteroid = storage.make_entity();
 	asteroid.graphics()
 		.set_texture(
-			Texture{ screen.sdl_renderer(), "resources/asteroid1.png" }
-			.set_scale(.2)
-		)
-		.set_hovering(.02, 3s, 2s);
-	asteroid.physics().set_position({0, 1, .4});
-
-	asteroid = storage.make_entity();
-	asteroid.graphics()
-		.set_texture(
 			Texture{ screen.sdl_renderer(), "resources/asteroid2.png" }
 			.set_scale(.4)
 		)
 		.set_hovering(.02, 3s, 0s);
 	asteroid.physics().set_position({0, 2, .6});
+
+	asteroid = storage.make_entity();
+	asteroid.graphics()
+		.set_texture(
+			Texture{ screen.sdl_renderer(), "resources/asteroid1.png" }
+			.set_scale(.2)
+		)
+		.set_hovering(.02, 3s, 2s);
+	asteroid.physics().set_position({0, 1, .4});
 
 	asteroid.clone(screen.sdl_renderer()).physics().set_position({1, 0, .6});
 	asteroid.clone(screen.sdl_renderer()).physics().set_position({2, 0, .6});

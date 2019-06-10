@@ -10,6 +10,7 @@
 #include "../commands.h"
 #include "../entities/entity_storage.h"
 #include "../map/map_layer.h"
+#include "../map/map.h"
 
 namespace {
 
@@ -131,10 +132,10 @@ class MapView: public UIElement {
 
 	public:
 
-		MapView(SDL_Renderer* renderer, Coord2i size, MapLayer<bool>& walkable, EntityStorage& storage)
+		MapView(SDL_Renderer* renderer, Coord2i size, Map& map, EntityStorage& storage)
 			: _canvas(renderer, size),
 			  _grid_canvas(renderer, size),
-			  _walkable(walkable),
+			  _map(map),
 			  _storage(storage)
 		{ }
 
@@ -151,11 +152,15 @@ class MapView: public UIElement {
 					}
 					break;
 
-				//case SDL_MOUSEBUTTONDOWN:
+				case SDL_MOUSEBUTTONDOWN:
+					fmt::print("{} {} -> {}\n", event.button.x, event.button.y,
+							transform_screen_hex({ event.button.x, event.button.y })
+					);
 					//if(event.button.button == SDL_BUTTON_LEFT) {
 						//_emit(DebugClickCommand { event.button.x, event.button.y });
 					//}
-					//break;
+					return true;
+					break;
 
 				case SDL_MOUSEWHEEL:
 					zoom(event.wheel.y);
@@ -218,8 +223,8 @@ class MapView: public UIElement {
 
 			static auto hex2d = transform_3d_2d(hex_polygon.begin(), hex_polygon.end());
 
-			for(Hex p: _walkable) {
-				auto w = _walkable[p];
+			for(Hex p: _map) {
+				auto w = _map.walkable(p);
 				if(!w) { continue; }
 
 				auto offset = transform_3d_2d(transform_hex_3d(p));
@@ -257,7 +262,10 @@ class MapView: public UIElement {
 		void _render_entities(SDL_Renderer* renderer) {
 			auto guard = _canvas.begin_render_onto(renderer);
 
-			for(auto e: _storage) {
+			for(Hex hex: _map) {
+				//auto w = _walkable[hex];
+				auto e = _map.entity(hex);
+
 				auto p = e.graphics().screen_position();
 				
 				auto& tex = e.graphics().texture();
@@ -308,7 +316,7 @@ class MapView: public UIElement {
 		static constexpr double _scale_max = 100.;
 		double _scale = _scale_max;
 		Coord2d _offset = { 100., 100. };
-		MapLayer<bool>& _walkable;
+		Map& _map;
 		EntityStorage& _storage;
 		bool _dirty = true;
 };

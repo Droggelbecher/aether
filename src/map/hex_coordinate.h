@@ -44,6 +44,11 @@ public:
 		return { _q + other._q, _r + other._r, _z + other._z };
 	}
 
+	template<typename U>
+	HexCoordinate operator/(const U& scalar) const {
+		return { _q / scalar, _r / scalar, _z / scalar };
+	}
+
 	static const HexCoordinate<T> invalid;
 	
 private:
@@ -66,5 +71,17 @@ const HexCoordinate<T> HexCoordinate<T>::invalid {
 	std::numeric_limits<T>::has_quiet_NaN ? std::numeric_limits<T>::quiet_NaN() : std::numeric_limits<T>::lowest(),
 	0
 };
+
+/**
+ * 2-d distance in hex fields (ignores z part of coordinates)
+ */
+template<typename T>
+T hex_distance(const HexCoordinate<T>& a, const HexCoordinate<T>& b) {
+	return (
+			  abs(a.q() - b.q())
+			+ abs(a.s() - b.s())
+			+ abs(a.r() - b.r())
+	) / 2;
+}
 
 #endif // _HEX_COORDINATE_H_

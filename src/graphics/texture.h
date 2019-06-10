@@ -60,8 +60,15 @@ public:
 		return *this;
 	}
 
+	/*
+	 * For copying we need a renderer as parameter, which we can not receive in operator=.
+	 * Thus instead, we provide a clone(...) function below.
+	 */
 	Texture& operator=(const Texture& other) = delete;
 
+	/*
+	 * Create a (deep) copy of this texture.
+	 */
 	Texture clone(SDL_Renderer *sdl_renderer) const {
 		Texture r;
 		r._scale = _scale;
