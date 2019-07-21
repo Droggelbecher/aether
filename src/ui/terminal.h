@@ -11,8 +11,16 @@
 #include "../sdl_utils.h"
 #include "../graphics/texture.h"
 
+#include "lua_interface.h"
+
 class Terminal: public UIElement {
 	public:
+
+		enum ResultType {
+			RESULT, ERROR
+		};
+
+		static constexpr auto TOGGLE_KEY = SDLK_F1;
 
 		Terminal(Coord2i position, Coord2i size, const char* path, int fontsize)
 			: _position(position), _size(size) {
@@ -27,8 +35,11 @@ class Terminal: public UIElement {
 		}
 
 		void render(SDL_Renderer *r) override {
-			_update_texture(r);
+			if(!_visible) {
+				return;
+			}
 
+			_update_texture(r);
 			_texture.render(r, std::nullopt, _texture.size());
 		}
 
@@ -39,6 +50,16 @@ class Terminal: public UIElement {
 		}
 
 		bool process_event(const SDL_Event& event) override {
+			// Only event we always react on is the toggle key
+			if(event.type == SDL_KEYDOWN && event.key.keysym.sym == TOGGLE_KEY) {
+				_visible = !_visible;
+				return true;
+			}
+
+			if(!_visible) {
+				return false;
+			}
+
 			switch(event.type) {
 				case SDL_TEXTINPUT:
 					_line += event.text.text;
@@ -57,13 +78,22 @@ class Terminal: public UIElement {
 
 						case SDLK_RETURN:
 						case SDLK_RETURN2:
-							fmt::print("Would run: {}\n", _line);
+							try {
+								_result = run_expression(_line);
+								_result_type = RESULT;
+							}
+							catch(sol::error& e) {
+								_result = e.what();
+								_result_type = ERROR;
+							}
+
 							_line = "";
 							_dirty = true;
 							break;
 					}
 					return true;
 					break;
+
 			}
 			return false;
 		}
@@ -77,13 +107,6 @@ class Terminal: public UIElement {
 			}
 		}
 
-		//void _free_texture() {
-			//if(_texture) {
-				//SDL_DestroyTexture(_texture);
-				//_texture = nullptr;
-			//}
-		//}
-
 		Texture _text(SDL_Renderer *renderer, const char *s, SDL_Color fg, SDL_Color bg) {
 			Texture r;
 
@@ -94,7 +117,7 @@ class Terminal: public UIElement {
 		}
 
 		void _update_texture(SDL_Renderer *renderer) {
-			if(!_dirty) {
+			if(!_dirty || !_visible) {
 				return;
 			}
 
@@ -118,6 +141,11 @@ class Terminal: public UIElement {
 			auto line = _text(renderer, _line.c_str(), _line_color, _background_color);
 			line.render(renderer, Coord2i { prompt.size().x() + 10, 10 });
 
+			auto result = _text(renderer, _result.c_str(),
+					_result_type == ERROR ? _error_color : _result_color,
+					_background_color);
+			result.render(renderer, Coord2i { 10, prompt.size().y() + 10 });
+
 			_dirty = false;
 		}
 
@@ -126,11 +154,16 @@ class Terminal: public UIElement {
 		TTF_Font *_font = nullptr;
 		std::string _prompt;
 		std::string _line;
+		std::string _result;
+		ResultType _result_type;
 		SDL_Color _prompt_color = { 0x80, 0xa0, 0xf0 };
 		SDL_Color _line_color = { 0xff, 0xff, 0xff };
+		SDL_Color _result_color = { 0xa0, 0xa0, 0xa0 };
+		SDL_Color _error_color = { 0xf0, 0x40, 0x20 };
 		SDL_Color _background_color = { 0x20, 0x20, 0x20 };
 		Texture _texture;
 		bool _dirty = true;
+		bool _visible = false;
 
 };
 

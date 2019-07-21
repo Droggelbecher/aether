@@ -17,21 +17,6 @@ public:
 	{
 	}
 
-	/*
-	bool process_command(const Command& command) {
-		//if(map_view().process_command(command)) {
-			//return true;
-		//}
-
-		for(auto& e: _elements) {
-			if(e->process_command(command)) {
-				return true;
-			}
-		}
-		return false;
-	}
-	*/
-
 	bool process_event(const SDL_Event& event) {
 		for(auto& e: _elements) {
 			if(e->process_event(event)) {
@@ -49,19 +34,12 @@ public:
 
 
 	void render(SDL_Renderer *r) {
-		//map_view().render(r);
-
 		for(auto& e: _elements) {
 			e->render(r);
 		}
 	}
 
-	//MapView& map_view() {
-		//return _map_view;
-	//}
-
 private:
-	//MapView& _map_view;
 	std::vector<UIElement*> _elements;
 };
 

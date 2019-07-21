@@ -15,11 +15,14 @@ add_executable(aether ${SOURCES})
 
 find_package(SDL2 COMPONENTS gfx REQUIRED)
 find_package(fmt REQUIRED)
+find_package(Lua REQUIRED)
 
 include_directories(
 	${SRC_DIR}
 	${SDL2_INCLUDE_DIRS}
+	sol2/include/
 	#${SDL2_IMAGE_INCLUDE_DIRS}
+	${LUA_INCLUDE_DIR}
 )
 
 set_property(TARGET aether PROPERTY CXX_STANDARD 17)
@@ -32,6 +35,7 @@ target_link_libraries(
 	SDL2_image
 	SDL2_ttf
 	fmt::fmt
+	${LUA_LIBRARIES}
 )
 
 

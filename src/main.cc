@@ -15,6 +15,8 @@
 #include "map/map.h"
 #include "ui/terminal.h"
 
+#include "lua_interface.h"
+
 void init_sdl() {
 	auto r = SDL_Init(SDL_INIT_VIDEO);
 	check_sdl(r != -1, "initialize SDL");
@@ -63,7 +65,7 @@ void run_game() {
 	};
 
 	Terminal terminal {
-		{ 0, 0 }, { 1200, 200 },
+		{ 0, 0 }, { 1200, 60 },
 		"resources/fonts/SourceCodePro/SourceCodePro-Regular.ttf",
 		14
 	};
@@ -71,6 +73,8 @@ void run_game() {
 
 	UserInterface ui { &map_view, &terminal };
 	GameLoop loop { screen, ui, storage };
+
+	init_lua(storage, loop);
 
 	auto asteroid = storage.make_entity();
 	asteroid.graphics()

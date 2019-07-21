@@ -72,7 +72,6 @@ private:
 
 	void _update_everything(std::chrono::nanoseconds dt) {
 		_storage.graphics_storage().update(dt);
-		//_user_interface.map_view().update_screen_positions();
 		_user_interface.update(dt);
 	}
 
@@ -80,11 +79,6 @@ private:
 		auto guard = _screen.begin_render_onto();
 		_user_interface.render(_screen.sdl_renderer());
 	}
-
-
-	//void _emit(const Command& command) {
-		//_user_interface.process_command(command);
-	//}
 
 	bool _stop = false;
 
